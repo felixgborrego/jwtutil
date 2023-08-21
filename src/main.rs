@@ -2,11 +2,11 @@ use chrono::{DateTime, Utc};
 use clap::{App, Arg};
 use colored_json::to_colored_json_auto;
 use jwt::{Header, Token, Unverified};
-
 use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::cmp::Ordering;
+use std::path::Path;
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct DummySignature {}
@@ -23,8 +23,19 @@ fn main() {
         )
         .get_matches();
 
-    let token = matches.value_of("TOKEN").unwrap();
-    display_jwt_as_json(token);
+    let token_or_file = matches.value_of("TOKEN").unwrap();
+
+    let token = if is_valid_file_path(token_or_file) {
+        std::fs::read_to_string(token_or_file).unwrap()
+    } else {
+        token_or_file.to_string()
+    };
+    display_jwt_as_json(&token);
+}
+
+pub fn is_valid_file_path(path_str: &str) -> bool {
+    let path = Path::new(path_str);
+    path.exists() && path.is_file()
 }
 
 fn display_jwt_as_json(token: &str) {
